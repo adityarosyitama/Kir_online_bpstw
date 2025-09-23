@@ -23,7 +23,7 @@ interface InventoryItem {
 function List({ keterangan, nama }: { keterangan: string; nama: string }) {
   return (
     <div className="flex text-sm font-medium">
-      <div className="text-left">
+      <div className="text-left w-1/9">
         <p>{keterangan}</p>
       </div>
       <div className="text-left ml-4 mr-4">

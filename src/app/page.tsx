@@ -137,6 +137,7 @@ export default function Home() {
 
   // Summary metrics
   const totalItems = data.reduce((sum, item) => sum + item.jumlahBarang, 0);
+  const filteredTotalItems = filteredData.reduce((sum, item) => sum + item.jumlahBarang, 0);
   const itemsByRoom = rooms.slice(1).map(room => ({
     room,
     count: data.filter(item => item.Ruang === room).length,
@@ -317,6 +318,9 @@ export default function Home() {
             <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">
               Item Quantities
             </h2>
+            <p className="text-gray-700 dark:text-gray-200 mb-4">
+              Total Items: <span className="font-bold text-blue-600 dark:text-blue-400">{filteredTotalItems}</span>
+            </p>
             <div className="flex justify-between items-center mb-4">
               <div>
                 <label className="text-gray-700 dark:text-gray-200 mr-2">Show</label>
@@ -392,7 +396,7 @@ export default function Home() {
                 plugins: {
                   legend: {
                     position: 'bottom',
-                    align:'start',
+                    align: 'start',
                   },
                 },
               }}
@@ -405,6 +409,9 @@ export default function Home() {
           <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">
             Inventory List
           </h2>
+          <p className="text-gray-700 dark:text-gray-200 mb-4">
+            Total Items: <span className="font-bold text-blue-600 dark:text-blue-400">{totalItems}</span>
+          </p>
           <div className="flex justify-between items-center mb-4">
             <div>
               <label className="text-gray-700 dark:text-gray-200 mr-2">Show</label>

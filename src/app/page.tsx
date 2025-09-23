@@ -2,18 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from 'next/navigation';
-import { Bar } from 'react-chartjs-2';
+import { Bar, Pie } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend,
 } from 'chart.js';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend);
 
 interface InventoryItem {
   noUrut: number;
@@ -41,6 +42,8 @@ export default function Home() {
   const [sortConfig, setSortConfig] = useState<{ key: keyof InventoryItem; direction: 'asc' | 'desc' } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [itemQuantitiesPage, setItemQuantitiesPage] = useState(1);
+  const [itemQuantitiesRowsPerPage, setItemQuantitiesRowsPerPage] = useState(10);
 
   useEffect(() => {
     async function fetchData() {
@@ -90,7 +93,7 @@ export default function Home() {
     }));
   };
 
-  // Pagination logic
+  // Pagination logic for Inventory List
   const totalPages = Math.ceil(sortedData.length / rowsPerPage);
   const paginatedData = sortedData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
@@ -101,6 +104,35 @@ export default function Home() {
   const handleRowsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setRowsPerPage(Number(e.target.value));
     setCurrentPage(1); // Reset to first page when rows per page changes
+  };
+
+  // Pagination logic for Item Quantities
+  const itemQuantities = filteredData.reduce((acc, item) => {
+    if (!acc[item.namaBarang]) {
+      acc[item.namaBarang] = 0;
+    }
+    acc[item.namaBarang] += item.jumlahBarang;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const itemQuantitiesArray = Object.entries(itemQuantities).map(([namaBarang, jumlah]) => ({
+    namaBarang,
+    jumlah,
+  }));
+
+  const itemQuantitiesTotalPages = Math.ceil(itemQuantitiesArray.length / itemQuantitiesRowsPerPage);
+  const paginatedItemQuantities = itemQuantitiesArray.slice(
+    (itemQuantitiesPage - 1) * itemQuantitiesRowsPerPage,
+    itemQuantitiesPage * itemQuantitiesRowsPerPage
+  );
+
+  const handleItemQuantitiesFirstPage = () => setItemQuantitiesPage(1);
+  const handleItemQuantitiesLastPage = () => setItemQuantitiesPage(itemQuantitiesTotalPages);
+  const handleItemQuantitiesNextPage = () => setItemQuantitiesPage(prev => Math.min(prev + 1, itemQuantitiesTotalPages));
+  const handleItemQuantitiesPreviousPage = () => setItemQuantitiesPage(prev => Math.max(prev - 1, 1));
+  const handleItemQuantitiesRowsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setItemQuantitiesRowsPerPage(Number(e.target.value));
+    setItemQuantitiesPage(1); // Reset to first page when rows per page changes
   };
 
   // Summary metrics
@@ -118,6 +150,27 @@ export default function Home() {
       data: itemsByRoom.map(item => item.count),
       backgroundColor: '#36A2EB',
       borderColor: '#2A80B9',
+      borderWidth: 1,
+    }],
+  };
+
+  // Pie chart data for item quantities
+  const pieChartData = {
+    labels: itemQuantitiesArray.map(item => item.namaBarang),
+    datasets: [{
+      label: 'Item Quantities',
+      data: itemQuantitiesArray.map(item => item.jumlah),
+      backgroundColor: [
+        '#FF6384',
+        '#36A2EB',
+        '#FFCE56',
+        '#4BC0C0',
+        '#9966FF',
+        '#FF9F40',
+        '#C9CB3F',
+        '#7BC043',
+      ],
+      borderColor: '#fff',
       borderWidth: 1,
     }],
   };
@@ -258,7 +311,96 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Table */}
+        {/* Item Quantities and Pie Chart */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md overflow-x-auto">
+            <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">
+              Item Quantities
+            </h2>
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <label className="text-gray-700 dark:text-gray-200 mr-2">Show</label>
+                <select
+                  className="p-2 border rounded-md dark:bg-gray-700 dark:text-white"
+                  value={itemQuantitiesRowsPerPage}
+                  onChange={handleItemQuantitiesRowsPerPageChange}
+                >
+                  <option value={10}>10</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+                <span className="text-gray-700 dark:text-gray-200 ml-2">entries</span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleItemQuantitiesFirstPage}
+                  disabled={itemQuantitiesPage === 1}
+                  className="px-3 py-1 bg-blue-500 text-white rounded-md disabled:bg-gray-300 dark:disabled:bg-gray-600"
+                >
+                  First
+                </button>
+                <button
+                  onClick={handleItemQuantitiesPreviousPage}
+                  disabled={itemQuantitiesPage === 1}
+                  className="px-3 py-1 bg-blue-500 text-white rounded-md disabled:bg-gray-300 dark:disabled:bg-gray-600"
+                >
+                  Previous
+                </button>
+                <span className="px-3 py-1 text-gray-700 dark:text-gray-200">
+                  Page {itemQuantitiesPage} of {itemQuantitiesTotalPages}
+                </span>
+                <button
+                  onClick={handleItemQuantitiesNextPage}
+                  disabled={itemQuantitiesPage === itemQuantitiesTotalPages}
+                  className="px-3 py-1 bg-blue-500 text-white rounded-md disabled:bg-gray-300 dark:disabled:bg-gray-600"
+                >
+                  Next
+                </button>
+                <button
+                  onClick={handleItemQuantitiesLastPage}
+                  disabled={itemQuantitiesPage === itemQuantitiesTotalPages}
+                  className="px-3 py-1 bg-blue-500 text-white rounded-md disabled:bg-gray-300 dark:disabled:bg-gray-600"
+                >
+                  Last
+                </button>
+              </div>
+            </div>
+            <table className="w-full text-left text-sm text-gray-700 dark:text-gray-200">
+              <thead>
+                <tr className="bg-gray-200 dark:bg-gray-700">
+                  <th className="p-2">Item Name</th>
+                  <th className="p-2">Quantity</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedItemQuantities.map(item => (
+                  <tr key={item.namaBarang} className="border-b dark:border-gray-700">
+                    <td className="p-2">{item.namaBarang}</td>
+                    <td className="p-2">{item.jumlah}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+            <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">
+              Item Quantities Distribution
+            </h2>
+            <Pie
+              data={pieChartData}
+              options={{
+                plugins: {
+                  legend: {
+                    position: 'bottom',
+                    align:'start',
+                  },
+                },
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Table Inventory List */}
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md overflow-x-auto">
           <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">
             Inventory List

@@ -52,10 +52,10 @@ export async function GET(request: Request) {
       skipEmptyLines: true,
     });
 
-    // Filter data by slug (Kode URL)
-    const filteredData = data.filter(
-      (row: CsvRow) => row['Kode URL']?.toLowerCase() === slug
-    );
+    // Filter data by slug only if slug is provided
+    const filteredData = slug
+      ? data.filter((row: CsvRow) => row['Kode URL']?.toLowerCase() === slug)
+      : data;
 
     // Map to desired structure
     const mappedData: MappedData[] = filteredData.map((row: CsvRow, index: number) => ({

@@ -42,6 +42,7 @@ export default function SlugPage() {
   const [data, setData] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showTopBar, setShowTopBar] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
@@ -66,6 +67,19 @@ export default function SlugPage() {
     fetchData();
   }, [slug]);
 
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      setShowTopBar(currentScrollY < lastScrollY || currentScrollY < 50);
+      lastScrollY = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   if (loading) {
     return <div className="p-6 text-center">Loading...</div>;
   }
@@ -83,63 +97,76 @@ export default function SlugPage() {
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4 text-center">KARTU INVENTARIS RUANGAN (KIR)</h1>
-      <div className="mb-4">
-        <List keterangan="Kuasa Pengguna" nama="TUTY AMALIA, SH.,M.Si" />
-        <List keterangan="Pengguna Barang" nama="SUHARYANTO" />
-        <List keterangan="Kode Lokasi" nama="12.000.12.04.100106.00000.00000000" />
-        <List keterangan="Nama Ruangan" nama={data[0]?.Ruang.toUpperCase()} />
-      </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border border-gray-300">
-          <thead>
-            <tr className="bg-gray-100">
-              <th scope="col" className="py-2 px-4 border-b text-left text-sm font-medium text-gray-700">No</th>
-              <th scope="col" className="py-2 px-4 border-b text-left text-sm font-medium text-gray-700">Nibar</th>
-              <th scope="col" className="py-2 px-4 border-b text-left text-sm font-medium text-gray-700">Nomor Register</th>
-              <th scope="col" className="py-2 px-4 border-b text-left text-sm font-medium text-gray-700">Kode Barang</th>
-              <th scope="col" className="py-2 px-4 border-b text-left text-sm font-medium text-gray-700">Nama Barang</th>
-              <th scope="col" className="py-2 px-4 border-b text-left text-sm font-medium text-gray-700">Spesifikasi Nama Barang</th>
-              <th scope="col" className="py-2 px-4 border-b text-left text-sm font-medium text-gray-700">Merk/Type</th>
-              <th scope="col" className="py-2 px-4 border-b text-left text-sm font-medium text-gray-700">Tahun Perolehan</th>
-              <th scope="col" className="py-2 px-4 border-b text-left text-sm font-medium text-gray-700">Jumlah</th>
-              <th scope="col" className="py-2 px-4 border-b text-left text-sm font-medium text-gray-700">Satuan</th>
-              <th scope="col" className="py-2 px-4 border-b text-left text-sm font-medium text-gray-700">Keterangan</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((item) => (
-              <tr key={item.noUrut} className="hover:bg-gray-50">
-                <td className="py-2 px-4 border-b text-sm text-gray-900">{item.noUrut}</td>
-                <td className="py-2 px-4 border-b text-sm text-gray-900">{item.nibar}</td>
-                <td className="py-2 px-4 border-b text-sm text-gray-900">{item.nomorRegister}</td>
-                <td className="py-2 px-4 border-b text-sm text-gray-900">{item.kodeBarang}</td>
-                <td className="py-2 px-4 border-b text-sm text-gray-900">{item.namaBarang}</td>
-                <td className="py-2 px-4 border-b text-sm text-gray-900">{item.spesifikasiNamaBarang}</td>
-                <td className="py-2 px-4 border-b text-sm text-gray-900">{item.merkType}</td>
-                <td className="py-2 px-4 border-b text-sm text-gray-900">{item.tahunPerolehan}</td>
-                <td className="py-2 px-4 border-b text-sm text-gray-900">{item.jumlahBarang}</td>
-                <td className="py-2 px-4 border-b text-sm text-gray-900">{item.satuanBarang}</td>
-                <td className="py-2 px-4 border-b text-sm text-gray-900">{item.keterangan}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="mt-6 text-center text-sm font-semibold text-red-600">
-        Catatan: Tidak dibenarkan memindah barang-barang yang ada dalam daftar ini tanpa sepengetahuan pengurus barang pengguna/pembantu pengurus barang dan penanggungjawab ruang
-      </div>
-      <div className="flex justify-between mt-6 text-sm font-medium">
-        <div className="text-left">
-          <p className="mb-20">Pengurus Barang Pembantu/Pengurus Barang</p>
-          <p>SUHARYANTO</p>
-          <p>197108192009011004</p>
+    <div className="relative">
+      {/* Top Bar */}
+      <div className={`fixed top-0 left-0 right-0 bg-transparent text-white p-4 z-50 transition-transform duration-300 ease-in-out ${
+          showTopBar ? 'translate-y-0' : '-translate-y-full'
+        }`}
+      >
+        <div className="container mx-auto flex justify-end items-left">
+          <p className="text-sm">Database last updated: 01/06/2025</p>
         </div>
-        <div className="text-right">
-          <p className="mb-20">Penanggungjawab Ruang</p>
-          <p>&nbsp;</p>
-          <p>&nbsp;</p>
+      </div>
+      
+      {/* Main Content */}
+      <div className="p-6 pt-12">
+        <h1 className="text-2xl font-bold mb-4 text-center">KARTU INVENTARIS RUANGAN (KIR)</h1>
+        <div className="mb-4">
+          <List keterangan="Kuasa Pengguna" nama="TUTY AMALIA, SH.,M.Si" />
+          <List keterangan="Pengguna Barang" nama="SUHARYANTO" />
+          <List keterangan="Kode Lokasi" nama="12.000.12.04.100106.00000.00000000" />
+          <List keterangan="Nama Ruangan" nama={data[0]?.Ruang.toUpperCase()} />
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white border border-gray-300">
+            <thead>
+              <tr className="bg-gray-100">
+                <th scope="col" className="py-2 px-4 border-b text-left text-sm font-medium text-gray-700">No</th>
+                <th scope="col" className="py-2 px-4 border-b text-left text-sm font-medium text-gray-700">Nibar</th>
+                <th scope="col" className="py-2 px-4 border-b text-left text-sm font-medium text-gray-700">Nomor Register</th>
+                <th scope="col" className="py-2 px-4 border-b text-left text-sm font-medium text-gray-700">Kode Barang</th>
+                <th scope="col" className="py-2 px-4 border-b text-left text-sm font-medium text-gray-700">Nama Barang</th>
+                <th scope="col" className="py-2 px-4 border-b text-left text-sm font-medium text-gray-700">Spesifikasi Nama Barang</th>
+                <th scope="col" className="py-2 px-4 border-b text-left text-sm font-medium text-gray-700">Merk/Type</th>
+                <th scope="col" className="py-2 px-4 border-b text-left text-sm font-medium text-gray-700">Tahun Perolehan</th>
+                <th scope="col" className="py-2 px-4 border-b text-left text-sm font-medium text-gray-700">Jumlah</th>
+                <th scope="col" className="py-2 px-4 border-b text-left text-sm font-medium text-gray-700">Satuan</th>
+                <th scope="col" className="py-2 px-4 border-b text-left text-sm font-medium text-gray-700">Keterangan</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((item) => (
+                <tr key={item.noUrut} className="hover:bg-gray-50">
+                  <td className="py-2 px-4 border-b text-sm text-gray-900">{item.noUrut}</td>
+                  <td className="py-2 px-4 border-b text-sm text-gray-900">{item.nibar}</td>
+                  <td className="py-2 px-4 border-b text-sm text-gray-900">{item.nomorRegister}</td>
+                  <td className="py-2 px-4 border-b text-sm text-gray-900">{item.kodeBarang}</td>
+                  <td className="py-2 px-4 border-b text-sm text-gray-900">{item.namaBarang}</td>
+                  <td className="py-2 px-4 border-b text-sm text-gray-900">{item.spesifikasiNamaBarang}</td>
+                  <td className="py-2 px-4 border-b text-sm text-gray-900">{item.merkType}</td>
+                  <td className="py-2 px-4 border-b text-sm text-gray-900">{item.tahunPerolehan}</td>
+                  <td className="py-2 px-4 border-b text-sm text-gray-900">{item.jumlahBarang}</td>
+                  <td className="py-2 px-4 border-b text-sm text-gray-900">{item.satuanBarang}</td>
+                  <td className="py-2 px-4 border-b text-sm text-gray-900">{item.keterangan}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="mt-6 text-center text-sm font-semibold text-red-600">
+          Catatan: Tidak dibenarkan memindah barang-barang yang ada dalam daftar ini tanpa sepengetahuan pengurus barang pengguna/pembantu pengurus barang dan penanggungjawab ruang
+        </div>
+        <div className="flex justify-between mt-6 text-sm font-medium">
+          <div className="text-left">
+            <p className="mb-20">Pengurus Barang Pembantu/Pengurus Barang</p>
+            <p>SUHARYANTO</p>
+            <p>197108192009011004</p>
+          </div>
+          <div className="text-right">
+            <p className="mb-20">Penanggungjawab Ruang</p>
+            <p>&nbsp;</p>
+            <p>&nbsp;</p>
+          </div>
         </div>
       </div>
     </div>

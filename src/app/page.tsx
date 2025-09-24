@@ -44,6 +44,8 @@ export default function Home() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [itemQuantitiesPage, setItemQuantitiesPage] = useState(1);
   const [itemQuantitiesRowsPerPage, setItemQuantitiesRowsPerPage] = useState(10);
+  const [showTopBar, setShowTopBar] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {
     async function fetchData() {
@@ -67,6 +69,24 @@ export default function Home() {
     }
     fetchData();
   }, [slug]);
+
+  // Handle scroll for top bar visibility
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        // Scrolling down and past 50px
+        setShowTopBar(false);
+      } else if (currentScrollY < lastScrollY) {
+        // Scrolling up
+        setShowTopBar(true);
+      }
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   // Get unique rooms for filter dropdown
   const rooms = ['all', ...new Set(data.map(item => item.Ruang))];
@@ -252,82 +272,185 @@ export default function Home() {
   }
 
   return (
-    <div className="font-sans min-h-screen p-8 pb-20 sm:p-20 bg-gray-100 dark:bg-gray-900">
-      <main className="flex flex-col gap-8">
-        <h1 className="text-3xl font-bold text-center text-gray-800 dark:text-white">
-          KIR Online BPSTW Dashboard
-        </h1>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
-            <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200">Total Items</h2>
-            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{totalItems}</p>
-          </div>
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
-            <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200">Rooms</h2>
-            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{rooms.length - 1}</p>
-          </div>
+    <div className="font-sans min-h-screen bg-gray-100 dark:bg-gray-900 relative">
+      {/* Top Bar */}
+      <div className={`fixed top-0 left-0 right-0 bg-transparent text-white p-4 z-50 transition-transform duration-300 ease-in-out ${
+          showTopBar ? 'translate-y-0' : '-translate-y-full'
+        }`}
+      >
+        <div className="container mx-auto flex justify-end items-left">
+          <p className="text-sm">Database last updated: 01/06/2025</p>
         </div>
+      </div>
 
-        {/* Filter and Chart */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
-            <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">
-              Filter by Room
-            </h2>
-            <select
-              className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
-              value={filterRoom}
-              onChange={(e) => setFilterRoom(e.target.value)}
-            >
-              {rooms.map(room => (
-                <option key={room} value={room}>
-                  {room === 'all' ? 'All Rooms' : room}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
-            <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">
-              Items by Room
-            </h2>
-            <Bar
-              data={chartData}
-              options={{
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    title: { display: true, text: 'Number of Items' },
-                  },
-                  x: {
-                    title: { display: true, text: 'Room' },
-                  },
-                },
-                plugins: {
-                  legend: { display: false },
-                },
-              }}
-            />
-          </div>
-        </div>
+      {/* Main Content */}
+      <div className="p-8 pb-20 sm:p-20">
+        <main className="flex flex-col gap-8">
+          <h1 className="text-3xl font-bold text-center text-gray-800 dark:text-white">
+            KIR Online BPSTW Dashboard
+          </h1>
 
-        {/* Item Quantities and Pie Chart */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+              <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200">Total Items</h2>
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{totalItems}</p>
+            </div>
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+              <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200">Rooms</h2>
+              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{rooms.length - 1}</p>
+            </div>
+          </div>
+
+          {/* Filter and Chart */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+              <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">
+                Filter by Room
+              </h2>
+              <select
+                className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
+                value={filterRoom}
+                onChange={(e) => setFilterRoom(e.target.value)}
+              >
+                {rooms.map(room => (
+                  <option key={room} value={room}>
+                    {room === 'all' ? 'All Rooms' : room}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+              <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">
+                Items by Room
+              </h2>
+              <Bar
+                data={chartData}
+                options={{
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      title: { display: true, text: 'Number of Items' },
+                    },
+                    x: {
+                      title: { display: true, text: 'Room' },
+                    },
+                  },
+                  plugins: {
+                    legend: { display: false },
+                  },
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Item Quantities and Pie Chart */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md overflow-x-auto">
+              <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">
+                Item Quantities [ {filterRoom} ]
+              </h2>
+              <p className="text-gray-700 dark:text-gray-200 mb-4">
+                Total Items: <span className="font-bold text-blue-600 dark:text-blue-400">{filteredTotalItems}</span>
+              </p>
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <label className="text-gray-700 dark:text-gray-200 mr-2">Show</label>
+                  <select
+                    className="p-2 border rounded-md dark:bg-gray-700 dark:text-white"
+                    value={itemQuantitiesRowsPerPage}
+                    onChange={handleItemQuantitiesRowsPerPageChange}
+                  >
+                    <option value={10}>10</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                  <span className="text-gray-700 dark:text-gray-200 ml-2">entries</span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleItemQuantitiesFirstPage}
+                    disabled={itemQuantitiesPage === 1}
+                    className="px-3 py-1 bg-blue-500 text-white rounded-md disabled:bg-gray-300 dark:disabled:bg-gray-600"
+                  >
+                    First
+                  </button>
+                  <button
+                    onClick={handleItemQuantitiesPreviousPage}
+                    disabled={itemQuantitiesPage === 1}
+                    className="px-3 py-1 bg-blue-500 text-white rounded-md disabled:bg-gray-300 dark:disabled:bg-gray-600"
+                  >
+                    Previous
+                  </button>
+                  <span className="px-3 py-1 text-gray-700 dark:text-gray-200">
+                    Page {itemQuantitiesPage} of {itemQuantitiesTotalPages}
+                  </span>
+                  <button
+                    onClick={handleItemQuantitiesNextPage}
+                    disabled={itemQuantitiesPage === itemQuantitiesTotalPages}
+                    className="px-3 py-1 bg-blue-500 text-white rounded-md disabled:bg-gray-300 dark:disabled:bg-gray-600"
+                  >
+                    Next
+                  </button>
+                  <button
+                    onClick={handleItemQuantitiesLastPage}
+                    disabled={itemQuantitiesPage === itemQuantitiesTotalPages}
+                    className="px-3 py-1 bg-blue-500 text-white rounded-md disabled:bg-gray-300 dark:disabled:bg-gray-600"
+                  >
+                    Last
+                  </button>
+                </div>
+              </div>
+              <table className="w-full text-left text-sm text-gray-700 dark:text-gray-200">
+                <thead>
+                  <tr className="bg-gray-200 dark:bg-gray-700">
+                    <th className="p-2">Item Name</th>
+                    <th className="p-2">Quantity</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedItemQuantities.map(item => (
+                    <tr key={item.namaBarang} className="border-b dark:border-gray-700">
+                      <td className="p-2">{item.namaBarang}</td>
+                      <td className="p-2">{item.jumlah}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+              <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">
+                Item Quantities Distribution
+              </h2>
+              <Pie
+                data={pieChartData}
+                options={{
+                  plugins: {
+                    legend: {
+                      position: 'bottom',
+                      align: 'start',
+                    },
+                  },
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Table Inventory List */}
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md overflow-x-auto">
             <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">
-              Item Quantities
+              Inventory List
             </h2>
             <p className="text-gray-700 dark:text-gray-200 mb-4">
-              Total Items: <span className="font-bold text-blue-600 dark:text-blue-400">{filteredTotalItems}</span>
+              Total Items: <span className="font-bold text-blue-600 dark:text-blue-400">{totalItems}</span>
             </p>
             <div className="flex justify-between items-center mb-4">
               <div>
                 <label className="text-gray-700 dark:text-gray-200 mr-2">Show</label>
                 <select
                   className="p-2 border rounded-md dark:bg-gray-700 dark:text-white"
-                  value={itemQuantitiesRowsPerPage}
-                  onChange={handleItemQuantitiesRowsPerPageChange}
+                  value={rowsPerPage}
+                  onChange={handleRowsPerPageChange}
                 >
                   <option value={10}>10</option>
                   <option value={50}>50</option>
@@ -337,32 +460,32 @@ export default function Home() {
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={handleItemQuantitiesFirstPage}
-                  disabled={itemQuantitiesPage === 1}
+                  onClick={handleFirstPage}
+                  disabled={currentPage === 1}
                   className="px-3 py-1 bg-blue-500 text-white rounded-md disabled:bg-gray-300 dark:disabled:bg-gray-600"
                 >
                   First
                 </button>
                 <button
-                  onClick={handleItemQuantitiesPreviousPage}
-                  disabled={itemQuantitiesPage === 1}
+                  onClick={handlePreviousPage}
+                  disabled={currentPage === 1}
                   className="px-3 py-1 bg-blue-500 text-white rounded-md disabled:bg-gray-300 dark:disabled:bg-gray-600"
                 >
                   Previous
                 </button>
                 <span className="px-3 py-1 text-gray-700 dark:text-gray-200">
-                  Page {itemQuantitiesPage} of {itemQuantitiesTotalPages}
+                  Page {currentPage} of {totalPages}
                 </span>
                 <button
-                  onClick={handleItemQuantitiesNextPage}
-                  disabled={itemQuantitiesPage === itemQuantitiesTotalPages}
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages}
                   className="px-3 py-1 bg-blue-500 text-white rounded-md disabled:bg-gray-300 dark:disabled:bg-gray-600"
                 >
                   Next
                 </button>
                 <button
-                  onClick={handleItemQuantitiesLastPage}
-                  disabled={itemQuantitiesPage === itemQuantitiesTotalPages}
+                  onClick={handleLastPage}
+                  disabled={currentPage === totalPages}
                   className="px-3 py-1 bg-blue-500 text-white rounded-md disabled:bg-gray-300 dark:disabled:bg-gray-600"
                 >
                   Last
@@ -372,203 +495,112 @@ export default function Home() {
             <table className="w-full text-left text-sm text-gray-700 dark:text-gray-200">
               <thead>
                 <tr className="bg-gray-200 dark:bg-gray-700">
-                  <th className="p-2">Item Name</th>
+                  <th className="p-2 cursor-pointer" onClick={() => handleSort('noUrut')}>
+                    No {sortConfig?.key === 'noUrut' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th className="p-2 cursor-pointer" onClick={() => handleSort('namaBarang')}>
+                    Item Name {sortConfig?.key === 'namaBarang' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th className="p-2 cursor-pointer" onClick={() => handleSort('Ruang')}>
+                    Room {sortConfig?.key === 'Ruang' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th className="p-2">Specification</th>
+                  <th className="p-2 cursor-pointer" onClick={() => handleSort('tahunPerolehan')}>
+                    Acquisition Year {sortConfig?.key === 'tahunPerolehan' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </th>
                   <th className="p-2">Quantity</th>
+                  <th className="p-2">Unit</th>
+                  <th className="p-2">Notes</th>
                 </tr>
               </thead>
               <tbody>
-                {paginatedItemQuantities.map(item => (
-                  <tr key={item.namaBarang} className="border-b dark:border-gray-700">
+                {paginatedData.map(item => (
+                  <tr key={item.nibar} className="border-b dark:border-gray-700">
+                    <td className="p-2">{item.noUrut}</td>
                     <td className="p-2">{item.namaBarang}</td>
-                    <td className="p-2">{item.jumlah}</td>
+                    <td className="p-2">{item.Ruang}</td>
+                    <td className="p-2">{item.spesifikasiNamaBarang || '-'}</td>
+                    <td className="p-2">{item.tahunPerolehan}</td>
+                    <td className="p-2">{item.jumlahBarang}</td>
+                    <td className="p-2">{item.satuanBarang}</td>
+                    <td className="p-2">{item.keterangan || '-'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+
+          {/* Wisma Summary Abiyoso */}
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md overflow-x-auto">
             <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">
-              Item Quantities Distribution
+              Wisma Summary Abiyoso
             </h2>
-            <Pie
-              data={pieChartData}
-              options={{
-                plugins: {
-                  legend: {
-                    position: 'bottom',
-                    align: 'start',
-                  },
-                },
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Table Inventory List */}
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md overflow-x-auto">
-          <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">
-            Inventory List
-          </h2>
-          <p className="text-gray-700 dark:text-gray-200 mb-4">
-            Total Items: <span className="font-bold text-blue-600 dark:text-blue-400">{totalItems}</span>
-          </p>
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <label className="text-gray-700 dark:text-gray-200 mr-2">Show</label>
-              <select
-                className="p-2 border rounded-md dark:bg-gray-700 dark:text-white"
-                value={rowsPerPage}
-                onChange={handleRowsPerPageChange}
-              >
-                <option value={10}>10</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
-              <span className="text-gray-700 dark:text-gray-200 ml-2">entries</span>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handleFirstPage}
-                disabled={currentPage === 1}
-                className="px-3 py-1 bg-blue-500 text-white rounded-md disabled:bg-gray-300 dark:disabled:bg-gray-600"
-              >
-                First
-              </button>
-              <button
-                onClick={handlePreviousPage}
-                disabled={currentPage === 1}
-                className="px-3 py-1 bg-blue-500 text-white rounded-md disabled:bg-gray-300 dark:disabled:bg-gray-600"
-              >
-                Previous
-              </button>
-              <span className="px-3 py-1 text-gray-700 dark:text-gray-200">
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                onClick={handleNextPage}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1 bg-blue-500 text-white rounded-md disabled:bg-gray-300 dark:disabled:bg-gray-600"
-              >
-                Next
-              </button>
-              <button
-                onClick={handleLastPage}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1 bg-blue-500 text-white rounded-md disabled:bg-gray-300 dark:disabled:bg-gray-600"
-              >
-                Last
-              </button>
-            </div>
-          </div>
-          <table className="w-full text-left text-sm text-gray-700 dark:text-gray-200">
-            <thead>
-              <tr className="bg-gray-200 dark:bg-gray-700">
-                <th className="p-2 cursor-pointer" onClick={() => handleSort('noUrut')}>
-                  No {sortConfig?.key === 'noUrut' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                </th>
-                <th className="p-2 cursor-pointer" onClick={() => handleSort('namaBarang')}>
-                  Item Name {sortConfig?.key === 'namaBarang' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                </th>
-                <th className="p-2 cursor-pointer" onClick={() => handleSort('Ruang')}>
-                  Room {sortConfig?.key === 'Ruang' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                </th>
-                <th className="p-2">Specification</th>
-                <th className="p-2 cursor-pointer" onClick={() => handleSort('tahunPerolehan')}>
-                  Acquisition Year {sortConfig?.key === 'tahunPerolehan' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                </th>
-                <th className="p-2">Quantity</th>
-                <th className="p-2">Unit</th>
-                <th className="p-2">Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedData.map(item => (
-                <tr key={item.nibar} className="border-b dark:border-gray-700">
-                  <td className="p-2">{item.noUrut}</td>
-                  <td className="p-2">{item.namaBarang}</td>
-                  <td className="p-2">{item.Ruang}</td>
-                  <td className="p-2">{item.spesifikasiNamaBarang || '-'}</td>
-                  <td className="p-2">{item.tahunPerolehan}</td>
-                  <td className="p-2">{item.jumlahBarang}</td>
-                  <td className="p-2">{item.satuanBarang}</td>
-                  <td className="p-2">{item.keterangan || '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        
-        {/* Wisma Summary Abiyoso */}
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md overflow-x-auto">
-          <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">
-            Wisma Summary Abiyoso
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-700 dark:text-gray-200">
-              <thead>
-                <tr className="bg-gray-200 dark:bg-gray-700">
-                  <th className="p-2 sticky left-0 bg-gray-200 dark:bg-gray-700 z-10">Nama Ruang</th>
-                  {allItemNamesAbiyoso.map((itemName) => (
-                    <th key={itemName} className="p-2 border border-gray-300 dark:border-gray-600">
-                      <div className="text-xs whitespace-nowrap">{itemName}</div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {wismaAbiyoso.map((room) => (
-                  <tr key={room} className="border-b dark:border-gray-700">
-                    <td className="p-2 font-medium sticky left-0 bg-white dark:bg-gray-800 z-10 border-r border-gray-300 dark:border-gray-600">
-                      {room}
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-gray-700 dark:text-gray-200">
+                <thead>
+                  <tr className="bg-gray-200 dark:bg-gray-700">
+                    <th className="p-2 sticky left-0 bg-gray-200 dark:bg-gray-700 z-10">Nama Ruang</th>
                     {allItemNamesAbiyoso.map((itemName) => (
-                      <td key={itemName} className="p-2 text-center border border-gray-300 dark:border-gray-600">
-                        {roomInventoryData[room]?.[itemName] || 0}
-                      </td>
+                      <th key={itemName} className="p-2 border border-gray-300 dark:border-gray-600">
+                        <div className="text-xs whitespace-nowrap">{itemName}</div>
+                      </th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Wisma Summary Budhi Luhur */}
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md overflow-x-auto">
-          <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">
-            Wisma Summary Budhi Luhur
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-700 dark:text-gray-200">
-              <thead>
-                <tr className="bg-gray-200 dark:bg-gray-700">
-                  <th className="p-2 sticky left-0 bg-gray-200 dark:bg-gray-700 z-10">Nama Ruang</th>
-                  {allItemNamesBudhiLuhur.map((itemName) => (
-                    <th key={itemName} className="p-2 border border-gray-300 dark:border-gray-600">
-                      <div className="text-xs whitespace-nowrap">{itemName}</div>
-                    </th>
+                </thead>
+                <tbody>
+                  {wismaAbiyoso.map((room) => (
+                    <tr key={room} className="border-b dark:border-gray-700">
+                      <td className="p-2 font-medium sticky left-0 bg-white dark:bg-gray-800 z-10 border-r border-gray-300 dark:border-gray-600">
+                        {room}
+                      </td>
+                      {allItemNamesAbiyoso.map((itemName) => (
+                        <td key={itemName} className="p-2 text-center border border-gray-300 dark:border-gray-600">
+                          {roomInventoryData[room]?.[itemName] || 0}
+                        </td>
+                      ))}
+                    </tr>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {wismaBudhiLuhur.map((room) => (
-                  <tr key={room} className="border-b dark:border-gray-700">
-                    <td className="p-2 font-medium sticky left-0 bg-white dark:bg-gray-800 z-10 border-r border-gray-300 dark:border-gray-600">
-                      {room}
-                    </td>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Wisma Summary Budhi Luhur */}
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md overflow-x-auto">
+            <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">
+              Wisma Summary Budhi Luhur
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-gray-700 dark:text-gray-200">
+                <thead>
+                  <tr className="bg-gray-200 dark:bg-gray-700">
+                    <th className="p-2 sticky left-0 bg-gray-200 dark:bg-gray-700 z-10">Nama Ruang</th>
                     {allItemNamesBudhiLuhur.map((itemName) => (
-                      <td key={itemName} className="p-2 text-center border border-gray-300 dark:border-gray-600">
-                        {roomInventoryData[room]?.[itemName] || 0}
-                      </td>
+                      <th key={itemName} className="p-2 border border-gray-300 dark:border-gray-600">
+                        <div className="text-xs whitespace-nowrap">{itemName}</div>
+                      </th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {wismaBudhiLuhur.map((room) => (
+                    <tr key={room} className="border-b dark:border-gray-700">
+                      <td className="p-2 font-medium sticky left-0 bg-white dark:bg-gray-800 z-10 border-r border-gray-300 dark:border-gray-600">
+                        {room}
+                      </td>
+                      {allItemNamesBudhiLuhur.map((itemName) => (
+                        <td key={itemName} className="p-2 text-center border border-gray-300 dark:border-gray-600">
+                          {roomInventoryData[room]?.[itemName] || 0}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
